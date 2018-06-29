@@ -1,0 +1,37 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: $app_name
+  namespace: $namespace
+  labels:
+    app: $app_name
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  revisionHistoryLimit: 5
+  # replica / pod specification
+  template:
+    metadata:
+      labels:
+        app: $app_name
+      annotations:
+        backup.ark.heptio.com/backup-volumes: data
+    spec:
+      containers:
+      - name: $app_name                       # Name of container. Can be same as app-name
+        image: $image  # docker image (hosted in gitlab) with version tag
+        imagePullPolicy: Always                 # You don't need to specify this field if you version your docker images (recommended). Default to IfNotPresent.
+        env:
+        - name: FILE_PATH
+          value: /var/app/out
+        volumeMounts:
+        - mountPath: "/var/app"
+          name: data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: $app_name
